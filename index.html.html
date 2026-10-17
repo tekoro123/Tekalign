@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tekalign</title>
+<style>
+:root{--bg:#10201f;--panel:#18302e;--line:#264643;--text:#e9f2ef;--muted:#8fa9a4;--ember:#f2b84b;--ink:#1b1403;--bad:#ff8a7a}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);overflow:hidden}
+body.blur #msgs{filter:blur(14px)}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+h1{font-size:20px;font-weight:700}
+#status{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+#dot{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+#dot.live{background:var(--ember);box-shadow:0 0 8px var(--ember)}
+#dot.off{background:var(--bad)}
+#pair{padding:16px;border-bottom:1px solid var(--line);background:var(--panel);max-height:55vh;overflow-y:auto}
+#pair p{color:var(--muted);font-size:14px;margin-bottom:10px}
+#link{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ember);font:14px ui-monospace,Menlo,Consolas,monospace}
+.row{display:flex;gap:8px;margin-top:10px}
+button{flex:1;padding:12px;border:0;border-radius:8px;cursor:pointer;background:var(--ember);color:var(--ink);font:600 15px system-ui,sans-serif}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+#qr{background:#fff;padding:10px;border-radius:8px;display:inline-block;margin-top:10px}
+#warn{color:var(--bad);font-size:13px;margin-top:10px}
+#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;transition:filter .15s}
+.m{max-width:80%;padding:9px 13px;border-radius:14px;overflow-wrap:anywhere;white-space:pre-wrap}
+.m.me{align-self:flex-end;background:var(--ember);color:var(--ink);border-bottom-right-radius:4px}
+.m.them{align-self:flex-start;background:var(--panel);border-bottom-left-radius:4px}
+.m.sys{align-self:center;background:none;color:var(--muted);font-size:13px;text-align:center;max-width:95%}
+.m img{max-width:100%;border-radius:8px;display:block}
+.m audio{max-width:100%;height:36px}
+.m small{display:block;opacity:.7;font-size:12px}
+.m a{color:inherit;font-weight:600}
+#rec{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line);background:var(--panel)}
+#rec span{flex:1;color:var(--bad)}
+#rec button{flex:0 0 auto}
+#bar{position:relative;display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+#text{flex:1;min-width:0;padding:12px 14px;border-radius:22px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit}
+#bar button{flex:0 0 auto;padding:12px 18px;border-radius:22px}
+#bar #plus{width:46px;padding:0;font-size:24px;background:var(--panel);color:var(--ember);border:1px solid var(--line)}
+#bar :disabled{opacity:.4;cursor:not-allowed}
+#menu{display:none;position:absolute;left:12px;bottom:calc(100% + 6px);width:min(290px,calc(100% - 24px));max-height:65vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;z-index:5}
+#menu.open{display:block}
+#menu button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;color:var(--text);border:0;border-bottom:1px solid var(--line);border-radius:0;padding:13px 14px;font:15px system-ui,sans-serif}
+#menu button:last-child{border-bottom:0;color:var(--bad)}
+#menu .v{margin-left:auto;color:var(--ember);font-size:13px}
+#end{padding:0 12px 12px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 12px 8px}
+#call{position:fixed;inset:0;background:#000;z-index:20;display:flex;flex-direction:column;justify-content:flex-end}
+#rv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#lv{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:12px;width:100px;border-radius:10px;border:1px solid var(--line)}
+#ctext{position:absolute;top:40%;width:100%;text-align:center;font-size:20px}
+#cbtns{position:relative;display:flex;gap:10px;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+#inc{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 12px);z-index:30;background:var(--panel);border:1px solid var(--ember);border-radius:14px;padding:16px}
+body.light{--bg:#eef3f2;--panel:#fff;--line:#cfdcd9;--text:#14302c;--muted:#58736e;--ember:#b86e00;--ink:#fff;--bad:#c0392b}
+#wall{position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;transform:scale(1.1)}
+body.walled header,body.walled #bar,body.walled #rec{background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(10px)}
+body.walled .m.them{background:color-mix(in srgb,var(--panel) 60%,transparent);backdrop-filter:blur(8px)}
+#call button.ghost{color:#fff;border-color:#555}
+#perm{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px}
+#perm>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:360px;width:100%}
+#perm h2{font-size:18px;margin-bottom:8px}
+#perm p{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div id="wall"></div>
+<header><h1>Tekalign</h1><div id="status"><span id="dot"></span><span id="stext">Starting…</span></div></header>
+
+<section id="pair" hidden>
+  <p>Send this one-time link to the person you want to chat with. It stops working once they join.</p>
+  <input id="link" readonly>
+  <div class="row"><button id="copy">Copy link</button><button id="share" class="ghost">Share</button><button id="qrb" class="ghost">QR code</button></div>
+  <div id="qr" hidden></div>
+  <div id="warn" hidden>You opened this file from your phone’s storage, so the link won’t work for others. Host the file online first (for example Netlify Drop or GitHub Pages), then open it from there.</div>
+</section>
+
+<main id="msgs" aria-live="polite"></main>
+<div id="end" hidden><button id="again" style="width:100%">Start a new chat</button></div>
+<div id="rec" hidden><span>● Recording <b id="rt">0:00</b></span><button id="rcancel" class="ghost">Cancel</button><button id="rsend">Send</button></div>
+
+<form id="bar" autocomplete="off">
+  <div id="menu">
+    <button type="button" data-a="photo">📷 Photo</button>
+    <button type="button" data-a="loc">📍 Share location</button>
+    <button type="button" data-a="voice">🎙 Voice message</button>
+    <button type="button" data-a="vcall">📞 Voice call</button>
+    <button type="button" data-a="vidcall">🎥 Video call</button>
+    <button type="button" data-a="ttl">⏱ Self-destruct<span class="v" id="v-ttl">Off</span></button>
+    <button type="button" data-a="nick">👤 Nickname<span class="v" id="v-nick">Not set</span></button>
+    <button type="button" data-a="snd">🔔 Sound &amp; vibration<span class="v" id="v-snd">On</span></button>
+    <button type="button" data-a="blur">🙈 Privacy blur<span class="v" id="v-blur">On</span></button>
+    <button type="button" data-a="theme">🌓 Theme<span class="v" id="v-theme">Dark</span></button>
+    <button type="button" data-a="bg">🖼 Background photo<span class="v" id="v-wall">None</span></button>
+    <button type="button" data-a="bgblur">🌫 Background blur<span class="v" id="v-wblur">Off</span></button>
+    <button type="button" data-a="bgclear">🗑 Remove background</button>
+    <button type="button" data-a="end">⛔ End chat &amp; clear</button>
+  </div>
+  <button type="button" id="plus" aria-label="More options">+</button>
+  <input id="text" placeholder="Type a message" maxlength="2000" disabled>
+  <button id="send" disabled>Send</button>
+</form>
+<footer>Messages live only on this screen. Close the app and they’re gone.</footer>
+<input type="file" id="file" accept="image/*" hidden>
+<input type="file" id="bgfile" accept="image/*" hidden>
+
+<div id="call" hidden>
+  <video id="rv" autoplay playsinline></video><video id="lv" autoplay playsinline muted></video>
+  <div id="ctext"></div>
+  <div id="cbtns"><button id="mute" class="ghost">Mute</button><button id="hang" style="background:var(--bad)">Hang up</button></div>
+</div>
+<div id="perm" hidden><div><h2 id="pt"></h2><p id="pb"></p><div class="row"><button id="pno" class="ghost">Not now</button><button id="pok">Allow</button></div></div></div>
+<div id="inc" hidden><p id="itext"></p><div class="row"><button id="acc">Accept</button><button id="dec" class="ghost">Decline</button></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const msgs=$('#msgs'),text=$('#text'),sendBtn=$('#send'),menu=$('#menu');
+const hostId=location.hash.slice(1),isGuest=!!hostId,TTLS=[0,30,60,300];
+let theme='dark',wall='',wblur=0,peer,conn=null,ended=false,name='',ttl=0,sound=true,blurOn=true,call=null,stream=null,incoming=null,rec=null,recChunks=[],recCancel=false,recT,lastTyping=0,typingT,ac;
+
+const lbl=t=>t===0?'Off':t<60?t+' sec':(t/60)+' min';
+function makeId(){const c='abcdefghjkmnpqrstuvwxyz23456789',a=new Uint8Array(10);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join('')}
+function setStatus(l,s){$('#stext').textContent=l;$('#dot').className=s||''}
+function refresh(){$('#v-ttl').textContent=lbl(ttl);$('#v-nick').textContent=name||'Not set';$('#v-snd').textContent=sound?'On':'Off';$('#v-blur').textContent=blurOn?'On':'Off'}
+function ping(){if(!sound)return;navigator.vibrate&&navigator.vibrate(80);try{ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=880;g.gain.value=.05;o.start();o.stop(ac.currentTime+.12)}catch(e){}}
+
+function add(k,d,who,n,t){
+  const el=document.createElement('div');el.className='m '+who;
+  if(who==='them'&&n){const s=document.createElement('small');s.textContent=n;el.appendChild(s)}
+  let c;
+  if(k==='img'){c=document.createElement('img');c.src=d}
+  else if(k==='voice'){c=document.createElement('audio');c.controls=true;c.src=d}
+  else if(k==='loc'){c=document.createElement('a');c.href='https://www.openstreetmap.org/?mlat='+d[0]+'&mlon='+d[1]+'#map=16/'+d[0]+'/'+d[1];c.target='_blank';c.rel='noopener';c.textContent='📍 Shared location'}
+  else{c=document.createElement('span');c.textContent=d}
+  el.appendChild(c);msgs.appendChild(el);msgs.scrollTop=msgs.scrollHeight;
+  if(t>0)setTimeout(()=>el.remove(),t*1000);
+}
+const sys=t=>add('text',t,'sys');
+function send(k,d){if(!conn||!conn.open)return;conn.send({t:'m',k,d,n:name,ttl});add(k,d,'me',null,ttl)}
+function needConn(){if(conn&&conn.open&&!ended)return true;sys('Connect with someone first.');return false}
+
+function endChat(note){
+  if(ended)return;ended=true;endCall();
+  setStatus('Chat ended','off');sys(note);
+  text.disabled=true;sendBtn.disabled=true;$('#pair').hidden=true;$('#end').hidden=false;
+  setTimeout(()=>{try{peer&&peer.destroy()}catch(e){}},500);
+}
+function wire(c){
+  conn=c;
+  c.on('open',()=>{$('#pair').hidden=true;setStatus('Connected','live');sys('Connected. Nothing here is saved. Tap + for photos, calls and more.');text.disabled=false;sendBtn.disabled=false;text.focus()});
+  c.on('data',m=>{
+    if(!m||typeof m!=='object')return;
+    if(m.t==='typing'&&!ended){$('#stext').textContent='typing…';clearTimeout(typingT);typingT=setTimeout(()=>{if(!ended)$('#stext').textContent='Connected'},2000)}
+    else if(m.t==='end'){msgs.innerHTML='';endChat('The other person ended the chat. Everything was cleared.')}
+    else if(m.t==='m'){
+      if(m.k==='img'&&!/^data:image\//.test(m.d))return;
+      if(m.k==='voice'&&!/^data:audio\//.test(m.d))return;
+      if(m.k==='loc')m.d=[+m.d[0],+m.d[1]];
+      else if(m.k==='text')m.d=String(m.d);
+      else if(m.k!=='img'&&m.k!=='voice')return;
+      add(m.k,m.d,'them',String(m.n||'').slice(0,20),TTLS.includes(m.ttl)?m.ttl:0);ping();
+    }
+  });
+  c.on('close',()=>endChat('The other person left. This chat is over.'));
+  c.on('error',()=>endChat('Connection lost. This chat is over.'));
+}
+
+/* permissions */
+function dlg(t,b,ok,no){return new Promise(r=>{
+  $('#pt').textContent=t;$('#pb').textContent=b;$('#pok').textContent=ok;$('#pno').textContent=no||'';$('#pno').hidden=!no;$('#perm').hidden=false;
+  $('#pok').onclick=()=>{$('#perm').hidden=true;r(true)};
+  $('#pno').onclick=()=>{$('#perm').hidden=true;r(false)};
+})}
+async function pstate(n){try{return(await navigator.permissions.query({name:n})).state}catch(e){return'prompt'}}
+async function gate(names,label,why){
+  const L=label.charAt(0).toUpperCase()+label.slice(1);
+  if(!window.isSecureContext){await dlg('Secure page needed','Your browser only allows the '+label+' on secure (https) pages. Open the hosted https link of this app instead of the local file, then try again.','OK');return false}
+  const st=await Promise.all(names.map(pstate));
+  if(st.includes('denied')){await dlg(L+' is blocked','Tap the lock icon next to the address bar, open Permissions, set it to Allow, then try again. Your browser may reload the page, which starts a new chat.','OK');return false}
+  if(st.every(x=>x==='granted'))return true;
+  return dlg('Allow the '+label+'?','Tekalign needs your '+label+' '+why+'. Tap Allow, then choose Allow in your browser’s pop-up.','Allow','Not now');
+}
+function medErr(e,label){
+  const n=e&&e.name;
+  sys(n==='NotAllowedError'||n==='SecurityError'?'Permission for the '+label+' was denied. Try again and choose Allow.':n==='NotFoundError'?'No '+label+' was found on this device.':n==='NotReadableError'?'Another app is using your '+label+'. Close it and try again.':'Couldn’t use your '+label+'.');
+}
+
+/* calls */
+function showCall(v,l){$('#call').hidden=false;$('#lv').srcObject=stream;$('#lv').hidden=!v;$('#ctext').textContent=l;$('#mute').textContent='Mute'}
+function wireCall(c,v){c.on('stream',s=>{$('#rv').srcObject=s;$('#ctext').textContent=v?'':'Voice call'});c.on('close',endCall);c.on('error',endCall)}
+function endCall(){
+  const c=call;call=null;try{c&&c.close()}catch(e){}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  $('#rv').srcObject=null;$('#call').hidden=true;$('#inc').hidden=true;incoming=null;
+}
+async function startCall(v){
+  if(!needConn()||call)return;
+  const lb=v?'camera and microphone':'microphone';
+  if(!await gate(v?['microphone','camera']:['microphone'],lb,'for the call'))return;
+  if(!conn||!conn.open||ended)return;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true,video:v})}catch(e){medErr(e,lb);return}
+  call=peer.call(conn.peer,stream,{metadata:{video:v}});showCall(v,'Calling…');wireCall(call,v);
+}
+$('#acc').onclick=async()=>{
+  const c=incoming,v=!!(c&&c.metadata&&c.metadata.video);if(!c)return;
+  const lb=v?'camera and microphone':'microphone';
+  if(!await gate(v?['microphone','camera']:['microphone'],lb,'to answer the call')){try{c.close()}catch(e){}incoming=null;$('#inc').hidden=true;return}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true,video:v})}catch(e){c.close();endCall();medErr(e,lb);return}
+  $('#inc').hidden=true;incoming=null;call=c;c.answer(stream);showCall(v,'Connecting…');wireCall(c,v);
+};
+$('#dec').onclick=()=>{try{incoming&&incoming.close()}catch(e){}incoming=null;$('#inc').hidden=true};
+$('#hang').onclick=endCall;
+$('#mute').onclick=()=>{const t=stream&&stream.getAudioTracks()[0];if(t){t.enabled=!t.enabled;$('#mute').textContent=t.enabled?'Mute':'Unmute'}};
+
+/* voice message */
+async function startRec(){
+  if(!needConn()||!await gate(['microphone'],'microphone','to record voice messages'))return;
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({audio:true});recChunks=[];recCancel=false;rec=new MediaRecorder(s);
+    rec.ondataavailable=e=>recChunks.push(e.data);
+    rec.onstop=()=>{s.getTracks().forEach(t=>t.stop());clearInterval(recT);$('#rec').hidden=true;if(recCancel)return;const r=new FileReader();r.onload=()=>send('voice',r.result);r.readAsDataURL(new Blob(recChunks,{type:rec.mimeType}))};
+    rec.start();$('#rec').hidden=false;let sec=0;$('#rt').textContent='0:00';
+    recT=setInterval(()=>{sec++;$('#rt').textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');if(sec>=120)rec.stop()},1000);
+  }catch(e){medErr(e,'microphone')}
+}
+$('#rsend').onclick=()=>rec&&rec.state!=='inactive'&&rec.stop();
+$('#rcancel').onclick=()=>{recCancel=true;rec&&rec.state!=='inactive'&&rec.stop()};
+
+/* other actions */
+async function shareLoc(){
+  if(!needConn())return;
+  if(!navigator.geolocation){sys('Location isn’t available on this device.');return}
+  if(!await gate(['geolocation'],'location','to share where you are'))return;
+  sys('Getting your location…');
+  navigator.geolocation.getCurrentPosition(p=>send('loc',[+p.coords.latitude.toFixed(5),+p.coords.longitude.toFixed(5)]),e=>sys(e.code===1?'Permission for location was denied. Try again and choose Allow.':e.code===3?'Getting your location took too long. Try again.':'Your location isn’t available. Turn on GPS and try again.'),{enableHighAccuracy:true,timeout:15000});
+}
+function readImg(f,max,q,cb){const r=new FileReader();r.onload=()=>{const i=new Image();i.onload=()=>{const s=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*s;c.height=i.height*s;c.getContext('2d').drawImage(i,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',q))};i.src=r.result};r.readAsDataURL(f)}
+$('#file').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f&&needConn())readImg(f,900,.7,d=>send('img',d))};
+$('#bgfile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)readImg(f,1200,.75,d=>{wall=d;applyLook()})};
+const BL=['Off','Soft','Strong'],BPX=[0,6,16];
+function applyLook(){
+  document.body.classList.toggle('light',theme==='light');
+  document.body.classList.toggle('walled',!!wall);
+  const w=$('#wall');
+  w.style.backgroundImage=wall?'linear-gradient(color-mix(in srgb,var(--bg) 40%,transparent),color-mix(in srgb,var(--bg) 40%,transparent)),url("'+wall+'")':'none';
+  w.style.filter=wblur?'blur('+BPX[wblur]+'px)':'none';
+  $('#v-theme').textContent=theme==='light'?'Light':'Dark';
+  $('#v-wall').textContent=wall?'Set':'None';
+  $('#v-wblur').textContent=BL[wblur];
+}
+function initLook(){
+  try{theme=localStorage.getItem('vanish-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){}
+  applyLook();
+}
+function endNow(){
+  if(conn&&conn.open){try{conn.send({t:'end'})}catch(e){}}
+  msgs.innerHTML='';endChat('You ended the chat. Everything was cleared.');
+}
+const actions={
+  photo:()=>$('#file').click(),loc:shareLoc,voice:startRec,vcall:()=>startCall(false),vidcall:()=>startCall(true),
+  ttl:()=>{ttl=TTLS[(TTLS.indexOf(ttl)+1)%TTLS.length];refresh();sys(ttl?'Your new messages vanish after '+lbl(ttl)+'.':'Self-destruct is off.')},
+  nick:()=>{const n=prompt('Your nickname',name);if(n!==null){name=n.trim().slice(0,20);refresh()}},
+  snd:()=>{sound=!sound;refresh()},blur:()=>{blurOn=!blurOn;refresh()},end:endNow,
+  theme:()=>{theme=theme==='light'?'dark':'light';try{localStorage.setItem('vanish-theme',theme)}catch(e){}applyLook()},
+  bg:()=>$('#bgfile').click(),bgblur:()=>{wblur=(wblur+1)%3;applyLook()},bgclear:()=>{wall='';applyLook()}
+};
+menu.onclick=e=>{const b=e.target.closest('button');if(!b)return;menu.classList.remove('open');actions[b.dataset.a]()};
+$('#plus').onclick=()=>menu.classList.toggle('open');
+document.addEventListener('click',e=>{if(!menu.contains(e.target)&&e.target!==$('#plus'))menu.classList.remove('open')});
+
+$('#bar').addEventListener('submit',e=>{e.preventDefault();const t=text.value.trim();if(!t||!conn||!conn.open)return;send('text',t);text.value=''});
+text.addEventListener('input',()=>{if(conn&&conn.open&&Date.now()-lastTyping>1500){lastTyping=Date.now();conn.send({t:'typing'})}});
+$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#link').value);$('#copy').textContent='Copied'}catch(e){$('#link').select()}setTimeout(()=>$('#copy').textContent='Copy link',1500)};
+$('#share').onclick=()=>{navigator.share?navigator.share({title:'Tekalign chat',url:$('#link').value}).catch(()=>{}):$('#copy').click()};
+$('#qrb').onclick=()=>{$('#qr').hidden=!$('#qr').hidden};
+$('#again').onclick=()=>{history.replaceState(null,'',location.href.split('#')[0]);location.reload()};
+document.addEventListener('visibilitychange',()=>document.body.classList.toggle('blur',blurOn&&document.hidden));
+window.addEventListener('pagehide',()=>{try{conn&&conn.close()}catch(e){}});
+
+function start(){
+  refresh();initLook();
+  if(typeof Peer==='undefined'){setStatus('Offline','off');sys('Couldn’t load the chat engine. Check your internet connection and reload.');return}
+  if(isGuest){
+    peer=new Peer();setStatus('Connecting…');
+    peer.on('open',()=>{wire(peer.connect(hostId,{reliable:true}));setTimeout(()=>{if(!conn.open&&!ended)endChat('Couldn’t connect. The link may be used or expired.')},15000)});
+  }else{
+    const id=makeId();peer=new Peer(id);setStatus('Waiting for someone…');
+    peer.on('open',()=>{
+      const url=location.href.split('#')[0]+'#'+id;$('#link').value=url;$('#pair').hidden=false;
+      if(location.protocol==='file:')$('#warn').hidden=false;
+      if(typeof QRCode!=='undefined')new QRCode($('#qr'),{text:url,width:170,height:170});
+    });
+    peer.on('connection',c=>{if(conn){c.on('open',()=>c.close());return}wire(c)});
+  }
+  peer.on('call',c=>{if(call||incoming||ended){c.close();return}incoming=c;$('#itext').textContent='Incoming '+(c.metadata&&c.metadata.video?'video':'voice')+' call';$('#inc').hidden=false;ping()});
+  peer.on('disconnected',()=>{if(!ended)setTimeout(()=>{try{peer.reconnect()}catch(e){}},1000)});
+  peer.on('error',e=>{
+    if(e.type==='peer-unavailable')endChat('That link isn’t active anymore. Ask for a new one.');
+    else if(!conn||!conn.open)endChat('Something went wrong ('+e.type+'). Start a new chat.');
+  });
+}
+start();
+</script>
+</body>
+</html>
